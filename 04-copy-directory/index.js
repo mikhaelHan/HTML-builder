@@ -1,5 +1,5 @@
 const { error } = require('console');
-const fs = require('fs/promises');   //  'fs/promises'  //  node 04-copy-directory
+const fs = require('fs/promises');
 const path = require('path');
 const files = 'files';
 const copyFiles = 'copyFiles';
