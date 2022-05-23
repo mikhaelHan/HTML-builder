@@ -1,20 +1,22 @@
-const fsp = require('fs/promises');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
-const direct = `${path.dirname(__filename)}/secret-folder`;
+const direct = path.join(__dirname, 'secret-folder');
 
 async function readding() {
-	try {
-		const resp = await fsp.readdir(`${direct}`, { withFileTypes: true })
-		resp.forEach(file => {
-			if (file.isFile()) {
-				let fileBox = (file.name).split('.');
-				const fileSize = fs.statSync(`${direct}/${file.name}`).size / 1024;
-				console.log(`${fileBox[0]} - ${fileBox[1]} - ${Math.round(fileSize * 100) / 100}kb`);
-			}
-		})
-	} catch (err) {
-		console.log(err);
-	}
+	const resp = await fs.readdir(direct, { withFileTypes: true });
+	resp.forEach(file => {
+		if (file.isFile()) {
+			const fileBox = (file.name).split('.');
+			fs.stat(path.join(direct, file.name))
+				.then(data => {
+					let vol = Math.round((data.size / 1024) * 100) / 100;
+					console.log(`${fileBox[0]} - ${fileBox[1]} - ${vol}kb`);
+				})
+		}
+	})
 }
-readding();
+try {
+	readding();
+} catch (err) {
+	throw err
+}
