@@ -7,7 +7,16 @@ const bundleFile = 'bundle.css';
 const bundlDirect = 'project-dist';
 const newDirect = path.join(__dirname, bundlDirect);
 
+async function fileСheck() {
+	const find = await fsp.readdir(newDirect, { recursive: true, force: true });
+	const res = find.includes(bundleFile);
+	if (res) {
+		await fsp.unlink(path.join(newDirect, bundleFile))
+	}
+}
+
 async function readFiles() {
+	await fileСheck();
 	const mass = await fsp.readdir(direct);
 	let data = '';
 	mass.forEach(file => {
