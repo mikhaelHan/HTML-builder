@@ -11,27 +11,30 @@ async function fileСheck() {
 	const find = await fsp.readdir(newDirect, { recursive: true, force: true });
 	const res = find.includes(bundleFile);
 	if (res) {
-		await fsp.unlink(path.join(newDirect, bundleFile))
+		await fsp.unlink(path.join(newDirect, bundleFile));
+		await fsp.appendFile(path.join(newDirect, bundleFile), '', (err) => {
+			if (err) throw error
+		})
 	}
+	else await fsp.appendFile(path.join(newDirect, bundleFile), '', (err) => {
+		if (err) throw error
+	})
 }
+
+
 
 async function readFiles() {
 	await fileСheck();
+	const writeStream = fs.createWriteStream(path.join(newDirect, bundleFile), 'utf-8');
 	const mass = await fsp.readdir(direct);
-	let data = '';
-	mass.forEach(file => {
+	mass.forEach(async file => {
 		if (file.split('.')[1] === 'css') {
-			const stream = fs.createReadStream(path.join(direct, file), 'utf-8');
-			stream.on('data', chunk => data += chunk);
-			stream.on('end', () => {
-				fs.appendFile(path.join(newDirect, bundleFile), data, (err) => {
-					if (err) throw error;
-				});
-			});
-			stream.on('error', error => console.log('Error', error.message));
+			const readStream = fs.createReadStream(path.join(direct, file), 'utf-8');
+			readStream.on('data', chunk => writeStream.write(chunk));
 		}
 	});
 }
+
 try {
 	readFiles();
 } catch (err) {

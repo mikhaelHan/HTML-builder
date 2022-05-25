@@ -13,7 +13,6 @@ const assets = 'assets';
 
 const pathProjectDist = path.join(__dirname, projectDist);
 
-
 async function deletefiles(way) {
 	const find = await fsp.readdir(way, { recursive: true, force: true, withFileTypes: true });
 	find.forEach(async (file) => {
@@ -43,53 +42,58 @@ async function checkProject() {
 }
 
 async function createStyleFile() {
+	await fsp.appendFile(path.join(pathProjectDist, styleFile), '', (err) => {
+		if (err) throw error
+	})
+	const writeStream = fs.createWriteStream(path.join(pathProjectDist, styleFile), 'utf-8');
 	const styleWay = path.join(__dirname, styleCatalog);
 	const mass = await fsp.readdir(styleWay);
-	let data = '';
 	mass.forEach(file => {
 		if (file.split('.')[1] === 'css') {
-			const stream = fs.createReadStream(path.join(styleWay, file), 'utf-8');
-			stream.on('data', chunk => data += chunk);
-			stream.on('end', () => {
-				fs.appendFile(path.join(pathProjectDist, styleFile), data, (err) => {
-					if (err) throw error;
-				});
-			});
-			stream.on('error', error => console.log('Error', error.message));
+			const readStream = fs.createReadStream(path.join(styleWay, file), 'utf-8');
+			readStream.on('data', chunk => writeStream.write(chunk));
 		}
 	});
 }
 
 async function createHtmlFile() {
-	const stream = fs.createReadStream(path.join(__dirname, templateFile), 'utf-8');
-	let data = '';
-	stream.on('data', chunk => data += chunk);
-	stream.on('end', () => {
-		fs.appendFile(path.join(pathProjectDist, indexFile), data, (err) => {
-			if (err) throw error;
-		});
-	});
+	let readFile = await fsp.readFile(path.join(__dirname, templateFile), 'utf-8');
+	const stream = fs.createWriteStream(path.join(pathProjectDist, indexFile), 'utf-8');
+	const mass = await fsp.readdir(path.join(__dirname, indexCatalog), { withFileTypes: true });
+	mass.forEach(async (file) => {
+		const thisFile = file.name;
+		if (file.isFile() && thisFile.split('.' === 'html')) {
+			const readThisFile = await fsp.readFile(path.join(__dirname, indexCatalog, thisFile), 'utf-8');
+			const nameSample = thisFile.split('.')[0];
+			const sample = `{{${nameSample}}}`;
+			readFile = (await readFile).replace(sample, readThisFile);
+		}
+	})
+	await fsp.copyFile(path.join(__dirname, templateFile), path.join(pathProjectDist, indexFile));
+	stream.write(readFile);
 }
 
 async function copyAssetsDirect() {
 	const pushDir = path.join(pathProjectDist, assets);
 	const readDir = path.join(__dirname, assets);
 	const mass = await fsp.readdir(readDir);
-	mass.forEach(async (file) => {
-		const oldCatalog = path.join(readDir, file);
-		const newCatalog = path.join(pushDir, file);
-		const readOldCatalog = await fsp.readdir(oldCatalog, { recursive: true, force: true });
-		const oldFile = path.join(oldCatalog, readOldCatalog[0]);
-		const newFile = path.join(newCatalog, readOldCatalog[0]);
-		await fsp.copyFile(oldFile, newFile);
+	mass.forEach(async (cat) => {
+		const oldCatalog = path.join(readDir, cat);
+		const newCatalog = path.join(pushDir, cat);
+		const readOldCatalog = await fsp.readdir(oldCatalog);
+		readOldCatalog.forEach(async (file) => {
+			const oldFile = path.join(oldCatalog, file);
+			const newFile = path.join(newCatalog, file);
+			await fsp.copyFile(oldFile, newFile);
+		})
 	});
 }
 
 async function createProject() {
-	await checkProject();
+	await checkProject()
 	await createStyleFile();
 	await copyAssetsDirect();
-	await createHtmlFile()
+	await createHtmlFile();
 }
 
 try {

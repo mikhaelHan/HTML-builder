@@ -1,7 +1,6 @@
-const { error } = require('console');
 const fs = require('fs');
 const path = require('path');
-const { stdin, stdout, stderr } = process;
+const { stdin, stdout, } = process;
 const file = path.dirname(__filename);
 
 
@@ -20,9 +19,9 @@ fs.writeFile(`${file}/text.txt`, '', (err) => {
         process.exit();
       }
     });
-    process.on('exit', code => {
-      if (code !== 0) stdout.write('Good bye!!!');
-      else stderr.write('Good bye!!!')
+    process.on(('exit' || 'SIGINT'), () => {
+      stdout.write('Good bye!!!');
+      process.exit();
     });
   }
 });
