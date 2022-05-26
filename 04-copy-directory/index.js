@@ -7,32 +7,32 @@ const direct = path.join(__dirname, files);
 const copyDirect = path.join(__dirname, copyFiles);
 
 async function createNewCatalog() {
-	const find = await fs.readdir(__dirname, { recursive: true, force: true });
-	const res = find.includes(copyFiles);
-	if (res) {
-		const newRes = await fs.readdir(copyDirect);
-		newRes.forEach(async (file) => {
-			await fs.unlink(path.join(copyDirect, file))
-		})
-	}
-	else {
-		fs.mkdir(copyDirect, err => {
-			if (err) throw error;
-		});
-	}
+  const find = await fs.readdir(__dirname, { recursive: true, force: true });
+  const res = find.includes(copyFiles);
+  if (res) {
+    const newRes = await fs.readdir(copyDirect);
+    newRes.forEach(async (file) => {
+      await fs.unlink(path.join(copyDirect, file));
+    });
+  }
+  else {
+    fs.mkdir(copyDirect, err => {
+      if (err) throw error;
+    });
+  }
 }
 
 async function createFiles() {
-	await createNewCatalog();
-	const mass = await fs.readdir(direct);
-	mass.forEach(async (file) => {
-		const oldFile = path.join(direct, file);
-		const newFile = path.join(copyDirect, file);
-		await fs.copyFile(oldFile, newFile);
-	});
+  await createNewCatalog();
+  const mass = await fs.readdir(direct);
+  mass.forEach(async (file) => {
+    const oldFile = path.join(direct, file);
+    const newFile = path.join(copyDirect, file);
+    await fs.copyFile(oldFile, newFile);
+  });
 }
 try {
-	createFiles();
+  createFiles();
 } catch (err) {
-	throw error;
+  throw error;
 }

@@ -16,10 +16,11 @@ fs.writeFile(`${file}/text.txt`, '', (err) => {
         });
       }
       else {
+        stdout.write('Good bye!!!');
         process.exit();
       }
     });
-    process.on(('exit' || 'SIGINT'), () => {
+    process.on(('SIGINT'), () => {
       stdout.write('Good bye!!!');
       process.exit();
     });
