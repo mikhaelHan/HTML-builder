@@ -15,7 +15,7 @@ const pathProjectDist = path.join(__dirname, projectDist);
 
 async function deletefiles(way) {
   const find = await fsp.readdir(way, { recursive: true, force: true, withFileTypes: true });
-  find.forEach(async (file) => {
+  for (let file of find) {
     if (file.isFile()) {
       await fsp.unlink(path.join(way, file.name));
     }
@@ -23,7 +23,7 @@ async function deletefiles(way) {
       const nextWay = path.join(way, file.name);
       return deletefiles(nextWay);
     }
-  });
+  }
 }
 
 async function checkProject() {
@@ -48,19 +48,19 @@ async function createStyleFile() {
   const writeStream = fs.createWriteStream(path.join(pathProjectDist, styleFile), 'utf-8');
   const styleWay = path.join(__dirname, styleCatalog);
   const mass = await fsp.readdir(styleWay);
-  mass.forEach(file => {
+  for (let file of mass) {
     if (file.split('.')[1] === 'css') {
       const readStream = fs.createReadStream(path.join(styleWay, file), 'utf-8');
       readStream.on('data', chunk => writeStream.write(chunk));
     }
-  });
+  }
 }
 
 async function createHtmlFile() {
   let readFile = await fsp.readFile(path.join(__dirname, templateFile), 'utf-8');
   const stream = fs.createWriteStream(path.join(pathProjectDist, indexFile), 'utf-8');
   const mass = await fsp.readdir(path.join(__dirname, indexCatalog), { withFileTypes: true });
-  mass.forEach(async (file) => {
+  for (let file of mass) {
     const thisFile = file.name;
     if (file.isFile() && thisFile.split('.' === 'html')) {
       const readThisFile = await fsp.readFile(path.join(__dirname, indexCatalog, thisFile), 'utf-8');
@@ -68,7 +68,7 @@ async function createHtmlFile() {
       const sample = `{{${nameSample}}}`;
       readFile = (await readFile).replace(sample, readThisFile);
     }
-  });
+  }
   await fsp.copyFile(path.join(__dirname, templateFile), path.join(pathProjectDist, indexFile));
   stream.write(readFile);
 }
