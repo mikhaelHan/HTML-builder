@@ -1,38 +1,66 @@
-const { error } = require('console');
-const fs = require('fs/promises');
-const path = require('path');
-const files = 'files';
-const copyFiles = 'files-copy';
-const direct = path.join(__dirname, files);
-const copyDirect = path.join(__dirname, copyFiles);
+class CreateCopy {
+  constructor () {
 
-async function createNewCatalog() {
-  const find = await fs.readdir(__dirname, { recursive: true, force: true });
-  const res = find.includes(copyFiles);
-  if (res) {
-    const newRes = await fs.readdir(copyDirect);
-    newRes.forEach(async (file) => {
-      await fs.unlink(path.join(copyDirect, file));
-    });
+    this.error = require('console');
+    this.fs = require('fs/promises');
+    this.path = require('path');
+
+    this.direct = this.path.join(__dirname, 'files');
+    this.copyDirect = this.path.join(__dirname, 'files-copy');
+
   }
-  else {
-    fs.mkdir(copyDirect, err => {
-      if (err) throw error;
-    });
+
+
+
+  async createNewCatalog() {
+    const find = await this.fs.readdir(__dirname, { recursive: true, force: true });
+
+    const result = find.includes('files-copy');
+
+    if (result) {
+      const massOfFilesCopy = await this.fs.readdir('files-copy');
+
+      for (let file of massOfFilesCopy) {
+        this.fs.unlink(this.path.join(this.copyDirect, file));
+      }
+
+    } else {
+
+      this.fs.mkdir(this.copyDirect, err => {
+        if (err) throw this.error;
+
+      });
+    }
+  }
+
+
+
+  async createFiles() {
+    await this.createNewCatalog();
+
+    const massOfFiles = await this.fs.readdir(this.direct);
+
+    for (let file of massOfFiles) {
+
+      const oldFile = this.path.join(this.direct, file);
+
+      const newFile = this.path.join(this.copyDirect, file);
+
+      this.fs.copyFile(oldFile, newFile);
+
+    }
   }
 }
 
-async function createFiles() {
-  await createNewCatalog();
-  const mass = await fs.readdir(direct);
-  mass.forEach(async (file) => {
-    const oldFile = path.join(direct, file);
-    const newFile = path.join(copyDirect, file);
-    await fs.copyFile(oldFile, newFile);
-  });
-}
+
+
 try {
-  createFiles();
+
+  const createCopy = new CreateCopy();
+  createCopy.createFiles();
+
 } catch (err) {
-  throw error;
+
+  throw this.error;
 }
+
