@@ -1,11 +1,33 @@
-const fs = require('fs');
-const path = require('path');
+class ConsoleInfo {
+  constructor () {
 
-const file = path.join(__dirname, 'text.txt');
-const stream = fs.createReadStream(file, 'utf-8');
+    this.fs = require('fs');
+    this.path = require('path');
+    this.error = require('console');
 
-let data = '';
+    this.file = this.path.join(__dirname, 'text.txt');
+    this.stream = this.fs.createReadStream(this.file, 'utf-8');
 
-stream.on('data', chunk => data += chunk);
-stream.on('end', () => console.log(data));
-stream.on('error', error => console.log('Error', error.message));
+  }
+
+  write() {
+
+    let data = '';
+
+    this.stream.on('data', chunk => data += chunk);
+    this.stream.on('end', () => console.log(data));
+    this.stream.on('error', error => console.log('Error', error.message));
+  }
+}
+
+
+try {
+
+  const consoleInfo = new ConsoleInfo();
+  consoleInfo.write();
+
+} catch (err) {
+
+  throw this.error;
+}
+
