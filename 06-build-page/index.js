@@ -1,103 +1,132 @@
-const { error } = require('console');
-const fs = require('fs');
-const fsp = require('fs/promises');
-const path = require('path');
+class Builder {
+  constructor () {
 
-const projectDist = 'project-dist';
-const indexCatalog = 'components';
-const templateFile = 'template.html';
-const indexFile = 'index.html';
-const styleCatalog = 'styles';
-const styleFile = 'style.css';
-const assets = 'assets';
+    this.error = require('console');
+    this.fs = require('fs');
+    this.fsp = require('fs/promises');
+    this.path = require('path');
 
-const pathProjectDist = path.join(__dirname, projectDist);
+  }
 
-async function deletefiles(way) {
-  const find = await fsp.readdir(way, { recursive: true, force: true, withFileTypes: true });
-  for (let file of find) {
-    if (file.isFile()) {
-      await fsp.unlink(path.join(way, file.name));
+
+  async deleteFiles(way) {
+    const find = await this.fsp.readdir(way, { recursive: true, force: true, withFileTypes: true });
+
+    for (let file of find) {
+      if (file.isFile()) {
+        await this.fsp.unlink(this.path.join(way, file.name));
+      }
+      else {
+        const nextWay = this.path.join(way, file.name);
+
+        return this.deleteFiles(nextWay);
+      }
+    }
+  }
+
+
+  async checkProject() {
+    const find = await this.fsp.readdir(__dirname, { recursive: true, force: true });
+    if (find.includes('project-dist')) {
+      await this.deleteFiles(this.path.join(__dirname, 'project-dist'));
     }
     else {
-      const nextWay = path.join(way, file.name);
-      return deletefiles(nextWay);
+      await this.fsp.mkdir(this.path.join(__dirname, 'project-dist'));
+      await this.fsp.mkdir(this.path.join(__dirname, 'project-dist', 'assets'));
+      const assetsWay = this.path.join(__dirname, 'project-dist', 'assets');
+      await this.fsp.mkdir(this.path.join(assetsWay, 'fonts'));
+      await this.fsp.mkdir(this.path.join(assetsWay, 'img'));
+      await this.fsp.mkdir(this.path.join(assetsWay, 'svg'));
     }
   }
-}
 
-async function checkProject() {
-  const find = await fsp.readdir(__dirname, { recursive: true, force: true });
-  if (find.includes(projectDist)) {
-    await deletefiles(path.join(__dirname, projectDist));
-  }
-  else {
-    await fsp.mkdir(path.join(pathProjectDist));
-    await fsp.mkdir(path.join(pathProjectDist, assets));
-    const assetsWay = path.join(pathProjectDist, assets);
-    await fsp.mkdir(path.join(assetsWay, 'fonts'));
-    await fsp.mkdir(path.join(assetsWay, 'img'));
-    await fsp.mkdir(path.join(assetsWay, 'svg'));
-  }
-}
 
-async function createStyleFile() {
-  await fsp.appendFile(path.join(pathProjectDist, styleFile), '', (err) => {
-    if (err) throw error;
-  });
-  const writeStream = fs.createWriteStream(path.join(pathProjectDist, styleFile), 'utf-8');
-  const styleWay = path.join(__dirname, styleCatalog);
-  const mass = await fsp.readdir(styleWay);
-  for (let file of mass) {
-    if (file.split('.')[1] === 'css') {
-      const readStream = fs.createReadStream(path.join(styleWay, file), 'utf-8');
-      readStream.on('data', chunk => writeStream.write(chunk));
-    }
-  }
-}
-
-async function createHtmlFile() {
-  let readFile = await fsp.readFile(path.join(__dirname, templateFile), 'utf-8');
-  const stream = fs.createWriteStream(path.join(pathProjectDist, indexFile), 'utf-8');
-  const mass = await fsp.readdir(path.join(__dirname, indexCatalog), { withFileTypes: true });
-  for (let file of mass) {
-    const thisFile = file.name;
-    if (file.isFile() && thisFile.split('.' === 'html')) {
-      const readThisFile = await fsp.readFile(path.join(__dirname, indexCatalog, thisFile), 'utf-8');
-      const nameSample = thisFile.split('.')[0];
-      const sample = `{{${nameSample}}}`;
-      readFile = (await readFile).replace(sample, readThisFile);
-    }
-  }
-  await fsp.copyFile(path.join(__dirname, templateFile), path.join(pathProjectDist, indexFile));
-  stream.write(readFile);
-}
-
-async function copyAssetsDirect() {
-  const pushDir = path.join(pathProjectDist, assets);
-  const readDir = path.join(__dirname, assets);
-  const mass = await fsp.readdir(readDir);
-  mass.forEach(async (cat) => {
-    const oldCatalog = path.join(readDir, cat);
-    const newCatalog = path.join(pushDir, cat);
-    const readOldCatalog = await fsp.readdir(oldCatalog);
-    readOldCatalog.forEach(async (file) => {
-      const oldFile = path.join(oldCatalog, file);
-      const newFile = path.join(newCatalog, file);
-      await fsp.copyFile(oldFile, newFile);
+  async createStyleFile() {
+    await this.fsp.appendFile(this.path.join(__dirname, 'project-dist', 'style.css'), '', (err) => {
+      if (err) throw this.error;
     });
-  });
+
+    const writeStream = this.fs.createWriteStream(this.path.join(__dirname, 'project-dist', 'style.css'), 'utf-8');
+
+    const styleWay = this.path.join(__dirname, 'styles');
+
+    const massOfStyles = await this.fsp.readdir(styleWay);
+
+    for (let file of massOfStyles) {
+
+      if (file.split('.')[1] === 'css') {
+        const readStream = this.fs.createReadStream(this.path.join(styleWay, file), 'utf-8');
+
+        readStream.on('data', chunk => writeStream.write(chunk));
+      }
+    }
+  }
+
+
+  async createHtmlFile() {
+    let readFile = await this.fsp.readFile(this.path.join(__dirname, 'template.html'), 'utf-8');
+
+    const stream = this.fs.createWriteStream(this.path.join(__dirname, 'project-dist', 'index.html'), 'utf-8');
+
+    const mass = await this.fsp.readdir(this.path.join(__dirname, 'components'), { withFileTypes: true });
+
+    for (let file of mass) {
+      const thisFile = file.name;
+
+      if (file.isFile() && thisFile.split('.' === 'html')) {
+        const readThisFile = await this.fsp.readFile(this.path.join(__dirname, 'components', thisFile), 'utf-8');
+
+        const nameSample = thisFile.split('.')[0];
+
+        const sample = `{{${nameSample}}}`;
+
+        readFile = readFile.replace(sample, readThisFile);
+      }
+    }
+    await this.fsp.copyFile(this.path.join(__dirname, 'template.html'), this.path.join(__dirname, 'project-dist', 'index.html'));
+    stream.write(readFile);
+  }
+
+
+  async copyAssetsDirect() {
+    const pushDir = this.path.join(__dirname, 'project-dist', 'assets');
+
+    const readDir = this.path.join(__dirname, 'assets');
+
+    const mass = await this.fsp.readdir(readDir);
+
+    for (let catalog of mass) {
+      const oldCatalog = this.path.join(readDir, catalog);
+      const newCatalog = this.path.join(pushDir, catalog);
+
+      const readOldCatalog = await this.fsp.readdir(oldCatalog);
+
+      for (let file of readOldCatalog) {
+        const oldFile = this.path.join(oldCatalog, file);
+        const newFile = this.path.join(newCatalog, file);
+
+        await this.fsp.copyFile(oldFile, newFile);
+      }
+    }
+  }
+
+
+  async createProject() {
+    await this.checkProject();
+    await this.createStyleFile();
+    await this.copyAssetsDirect();
+    await this.createHtmlFile();
+  }
+
 }
 
-async function createProject() {
-  await checkProject();
-  await createStyleFile();
-  await copyAssetsDirect();
-  await createHtmlFile();
-}
 
 try {
-  createProject();
-} catch (err) {
-  throw error;
+
+  const builder = new Builder();
+  builder.createProject();
+}
+catch (err) {
+
+  throw this.error;
 }
