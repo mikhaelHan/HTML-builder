@@ -1,42 +1,64 @@
-const { error } = require('console');
-const fs = require('fs');
-const fsp = require('fs/promises');
-const path = require('path');
-const direct = path.join(__dirname, 'styles');
-const bundleFile = 'bundle.css';
-const bundlDirect = 'project-dist';
-const newDirect = path.join(__dirname, bundlDirect);
+class CreateStyles {
+  constructor () {
 
-async function fileСheck() {
-  const find = await fsp.readdir(newDirect, { recursive: true, force: true });
-  const res = find.includes(bundleFile);
-  if (res) {
-    await fsp.unlink(path.join(newDirect, bundleFile));
-    await fsp.appendFile(path.join(newDirect, bundleFile), '', (err) => {
-      if (err) throw error;
+    this.error = require('console');
+    this.fs = require('fs');
+    this.fsp = require('fs/promises');
+    this.path = require('path');
+
+    this.direct = this.path.join(__dirname, 'styles');
+    this.newDirect = this.path.join(__dirname, 'project-dist');
+
+  }
+
+
+
+  async checkFiles() {
+    const find = await this.fsp.readdir(this.newDirect, { recursive: true, force: true });
+
+    const result = find.includes('bundle.css');
+
+    if (result) {
+      await this.fsp.unlink(this.path.join(this.newDirect, 'bundle.css'));
+
+      await this.fsp.appendFile(this.path.join(this.newDirect, 'bundle.css'), '', (err) => {
+
+        if (err) throw this.error;
+
+      });
+    } else await this.fsp.appendFile(this.path.join(this.newDirect, 'bundle.css'), '', (err) => {
+
+      if (err) throw this.error;
     });
   }
-  else await fsp.appendFile(path.join(newDirect, bundleFile), '', (err) => {
-    if (err) throw error;
-  });
-}
 
 
 
-async function readFiles() {
-  await fileСheck();
-  const writeStream = fs.createWriteStream(path.join(newDirect, bundleFile), 'utf-8');
-  const mass = await fsp.readdir(direct);
-  mass.forEach(async file => {
-    if (file.split('.')[1] === 'css') {
-      const readStream = fs.createReadStream(path.join(direct, file), 'utf-8');
-      readStream.on('data', chunk => writeStream.write(chunk));
+  async writeFiles() {
+    await this.checkFiles();
+
+    const writeStream = this.fs.createWriteStream(this.path.join(this.newDirect, 'bundle.css'), 'utf-8');
+
+    const massOfStyles = await this.fsp.readdir(this.direct);
+
+    for (let file of massOfStyles) {
+      if (file.split('.')[1] === 'css') {
+        const readStream = this.fs.createReadStream(this.path.join(this.direct, file), 'utf-8');
+
+        readStream.on('data', chunk => writeStream.write(chunk));
+      }
     }
-  });
+  }
 }
+
+
 
 try {
-  readFiles();
+
+  const createStyles = new CreateStyles();
+  createStyles.writeFiles();
+
 } catch (err) {
-  throw error;
+
+  throw this.error;
 }
