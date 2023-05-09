@@ -5,9 +5,6 @@ class CreateCopy {
     this.fs = require('fs/promises');
     this.path = require('path');
 
-    this.direct = this.path.join(__dirname, 'files');
-    this.copyDirect = this.path.join(__dirname, 'files-copy');
-
   }
 
 
@@ -18,15 +15,15 @@ class CreateCopy {
     const result = find.includes('files-copy');
 
     if (result) {
-      const massOfFilesCopy = await this.fs.readdir('files-copy');
+      const massOfFilesCopy = await this.fs.readdir(this.path.join(__dirname, 'files-copy'));
 
       for (let file of massOfFilesCopy) {
-        this.fs.unlink(this.path.join(this.copyDirect, file));
+        this.fs.unlink(this.path.join(__dirname, 'files-copy', file));
       }
+    }
 
-    } else {
-
-      this.fs.mkdir(this.copyDirect, err => {
+    else {
+      this.fs.mkdir(this.path.join(__dirname, 'files-copy'), err => {
         if (err) throw this.error;
 
       });
@@ -38,13 +35,13 @@ class CreateCopy {
   async createFiles() {
     await this.createNewCatalog();
 
-    const massOfFiles = await this.fs.readdir(this.direct);
+    const massOfFiles = await this.fs.readdir(this.path.join(__dirname, 'files'));
 
     for (let file of massOfFiles) {
 
-      const oldFile = this.path.join(this.direct, file);
+      const oldFile = this.path.join(__dirname, 'files', file);
 
-      const newFile = this.path.join(this.copyDirect, file);
+      const newFile = this.path.join(__dirname, 'files-copy', file);
 
       this.fs.copyFile(oldFile, newFile);
 
